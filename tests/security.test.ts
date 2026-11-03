@@ -30,6 +30,7 @@ test('500 concurrent requests share five task slots and reserve only $10', async
   assert.equal(results.filter(r => r.state === 'READY').length, 5);
   assert.equal(results.filter(r => r.state === 'BLOCKED').length, 495);
   const overview = await service.overview(f.user); assert.equal(overview.totals.reserved, 1000); assert.equal(overview.totals.available, 79000);
+  assert.equal(overview.requests.filter(r => r.state === 'READY').length, 5, 'open requests stay visible beyond the recent-activity limit');
 });
 test('independent agents cannot spend the same parent-vault balance', async () => {
   const f = await fixture({}, 6000); await service.setBudget(f.user, 10000);

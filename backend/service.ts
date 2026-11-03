@@ -55,7 +55,8 @@ export class VaultService {
     return this.locked(userId, async (tx, user) => {
       const agents = (await tx.query('SELECT * FROM agentvault.agents WHERE user_id=$1 ORDER BY created_at', [userId])).rows.map(mapAgent);
       const expenses = (await tx.query('SELECT * FROM agentvault.expenses WHERE user_id=$1 ORDER BY created_at', [userId])).rows.map(mapExpense);
-      const requests = (await tx.query('SELECT r.*, a.name AS agent_name FROM agentvault.requests r JOIN agentvault.agents a ON a.id=r.agent_id WHERE r.user_id=$1 ORDER BY r.created_at DESC LIMIT 250', [userId])).rows.map(mapRequest);
+      // Keep actionable requests visible even after a burst of rejected proposals.
+      const requests = (await tx.query('SELECT r.*, a.name AS agent_name FROM agentvault.requests r JOIN agentvault.agents a ON a.id=r.agent_id WHERE r.user_id=$1 AND (r.state=ANY($2::text[]) OR r.id IN (SELECT id FROM agentvault.requests WHERE user_id=$1 ORDER BY created_at DESC LIMIT 250)) ORDER BY r.created_at DESC', [userId, [...reserved, 'AWAITING_APPROVAL']])).rows.map(mapRequest);
       const events = (await tx.query('SELECT * FROM agentvault.audit WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100', [userId])).rows.map(r => ({ id: r.id, action: r.action, subjectId: r.subject_id, detail: r.detail, createdAt: r.created_at }));
       return { user: mapUser(user), agents, expenses, requests, events, payees, totals: { ...await this.totals(tx, user), activeAgents: user.paused ? 0 : agents.filter(a => a.status === 'active').length }, integration: { paymentMode: user.is_demo ? 'simulation' : this.config.paymentMode, paypalConfigured: !!(this.config.paypalClientId && this.config.paypalSecret && this.config.paypalMerchantId), webhookConfigured: !!this.config.paypalWebhookId, planner: this.config.geminiKey && !user.is_demo ? 'gemini' : 'local' } };
     });

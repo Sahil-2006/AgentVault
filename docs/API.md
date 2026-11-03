@@ -43,4 +43,4 @@ Pause/revoke cancels requests whose capture has not been dispatched. In-flight c
 
 Errors use JSON `{ "error": "message" }`, with 400 for invalid data, 401/403 for missing authority, 404 for inaccessible resources, 409 for stale/unsafe transitions, 429 for request limits, and 502/503 for provider/configuration failures.
 
-The UI displays the latest 250 requests and 100 audit events; older data remains in PostgreSQL. This release has no external scheduled worker. An external agent may propose tasks through this API, but owner checkout is still required.
+The UI displays the latest 250 requests, all open requests, and 100 audit events; older data remains in PostgreSQL. This release has no external scheduled worker. An external agent may propose tasks through this API, but owner checkout is still required.

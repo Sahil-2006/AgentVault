@@ -1,0 +1,9 @@
+getting-started-with-paypal-sandbox/
+data/
+tmp/
+tests/
+test-results/
+docs/
+.env
+.env.*
+!.env.example

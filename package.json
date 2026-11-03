@@ -1,0 +1,48 @@
+{
+  "name": "agentvault",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"tsx watch backend/index.ts\" \"vite --host 127.0.0.1\"",
+    "dev:api": "tsx watch backend/index.ts",
+    "build": "tsc --noEmit && vite build",
+    "start": "tsx backend/index.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "check": "tsc --noEmit",
+    "verify": "npm run check && npm test && npm run build"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.15",
+    "@fontsource/inter-tight": "^5.2.0",
+    "@fontsource/jetbrains-mono": "^5.2.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "lucide-react": "^0.468.0",
+    "pg": "^8.23.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.9",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/supertest": "^6.0.3",
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.0",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0"
+  }
+}

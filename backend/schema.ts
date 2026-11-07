@@ -31,6 +31,11 @@ CREATE TABLE IF NOT EXISTS agentvault.requests (
  create_key TEXT NOT NULL, capture_key TEXT NOT NULL, operation_started_at TEXT,
  created_at TEXT NOT NULL, updated_at TEXT NOT NULL, UNIQUE(user_id, client_key)
 );
+CREATE TABLE IF NOT EXISTS agentvault.sandbox_setups (
+ user_id TEXT PRIMARY KEY REFERENCES agentvault.users(id),
+ agent_id TEXT NOT NULL REFERENCES agentvault.agents(id),
+ expense_id TEXT NOT NULL REFERENCES agentvault.expenses(id)
+);
 CREATE TABLE IF NOT EXISTS agentvault.ledger (
  id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES agentvault.users(id), request_id TEXT REFERENCES agentvault.requests(id),
  kind TEXT NOT NULL, amount_cents INTEGER NOT NULL, created_at TEXT NOT NULL, UNIQUE(request_id, kind)

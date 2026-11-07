@@ -8,7 +8,11 @@ AgentVault is a working full-stack permission layer with a React dashboard, Expr
 
 ## Try it
 
-Choose **Explore live demo** for a private, seeded workspace with simulated payments. Approve a request, complete its simulated checkout, edit permissions, pause agents, or run the five-video control test. Create your own account for an empty workspace and configured provider integrations.
+Choose **Create your vault** and register or sign in to use PayPal Sandbox. On Overview, choose **Open $1 Sandbox test → Prepare $1 test**. Approve the request, continue to PayPal, sign in with a **Personal Sandbox buyer** (not the merchant account), approve, then confirm the payment after returning to AgentVault. The receipt shows the provider order and capture IDs. Test money only.
+
+The starter creates one agent and one task limited to a single $1 payment. Reopening it returns the same request; it cannot duplicate a charge. Existing budgets, pauses and permissions still apply. Create additional authorized tasks for further tests.
+
+Choose **Explore simulation** for a private, seeded workspace without PayPal payments. You can edit permissions, pause agents, or run the five-video control test. The **Use PayPal Sandbox** button opens account creation; demo data is never silently converted into payable requests.
 
 ## Run locally
 

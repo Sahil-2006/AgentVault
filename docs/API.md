@@ -23,6 +23,8 @@ Successful evaluation returns a request in `READY`, `AWAITING_APPROVAL` or `BLOC
 
 ## Payment states
 
+For a signed-in, non-demo Sandbox workspace, `POST /api/integrations/paypal/setup` prepares a single $1 test request with mandatory owner approval. Setup is idempotent per owner and does not change existing budgets, resume agents, or capture money. `POST /api/integrations/paypal/test` verifies server credentials. Both require the owner session, Origin, and CSRF token.
+
 ```text
 proposal ─── blocked
     │

@@ -152,6 +152,12 @@ export function createApp(db: Database, config: Config, paypal = new PayPal(conf
     res.json(mapRequest(await service.request(db, req.userId!, id)));
   });
   owner.post('/integrations/paypal/test', async (_req, res) => { await paypal.token(); res.json({ ok: true, message: 'PayPal Sandbox authentication verified.' }); });
+  owner.post('/integrations/paypal/setup', async (req: AuthRequest, res) => {
+    if (config.paymentMode !== 'sandbox' || !paypal.configured()) throw new AppError(503, 'PayPal Sandbox is not configured on the server.');
+    await paypal.token();
+    const setup = await service.setupSandbox(req.userId!);
+    res.json(await service.propose(req.userId!, setup.agentId, setup.expenseId, `sandbox-setup-${setup.expenseId}`));
+  });
   owner.post('/demo/burst', auth.limit('burst', 3, 3600000, true), async (req: AuthRequest, res) => {
     const user = await one(db, 'SELECT * FROM agentvault.users WHERE id=$1', [req.userId]);
     if (!user!.is_demo) throw new AppError(403, 'Run this simulation in a demo workspace.');

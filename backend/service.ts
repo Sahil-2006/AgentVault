@@ -7,6 +7,7 @@ import { evaluatePolicy } from './policy.js';
 import type { Config } from './config.js';
 
 export const payees: Payee[] = [
+  { id: 'sandbox', name: 'Sandbox test merchant', category: 'PayPal testing' },
   { id: 'electric', name: 'Electric Co.', category: 'Utilities' }, { id: 'internet', name: 'Fiber Internet', category: 'Utilities' },
   { id: 'streamly', name: 'Streamly', category: 'Subscriptions' }, { id: 'video', name: 'Frame Studio', category: 'Video generation' },
   { id: 'research', name: 'Research API', category: 'API services' },
@@ -69,6 +70,22 @@ export class VaultService {
       await tx.query('INSERT INTO agentvault.agents(id,user_id,name,purpose,policy,created_at) VALUES($1,$2,$3,$4,$5,$6)', [id, userId, input.name, input.purpose, JSON.stringify(input.policy), now()]);
       await this.audit(tx, userId, 'agent.created', id, `${input.name} registered with scoped permissions.`);
       return mapAgent(await this.agent(tx, userId, id));
+    });
+  }
+  async setupSandbox(userId: string) {
+    return this.locked(userId, async (tx, user) => {
+      if (user.is_demo || this.config.paymentMode !== 'sandbox') throw new AppError(409, 'Create or sign in to a Sandbox account first. Demo workspaces always use simulation.');
+      const existing = await one(tx, 'SELECT * FROM agentvault.sandbox_setups WHERE user_id=$1', [userId]);
+      if (existing) return { agentId: existing.agent_id as string, expenseId: existing.expense_id as string };
+      const counts = await one(tx, 'SELECT (SELECT count(*) FROM agentvault.agents WHERE user_id=$1)::int AS agents, (SELECT count(*) FROM agentvault.expenses WHERE user_id=$1)::int AS expenses', [userId]);
+      if (counts!.agents >= 20 || counts!.expenses >= 100) throw new AppError(409, 'Use an existing agent and task; this workspace has reached its setup limit.');
+      const agentId = randomUUID(), expenseId = randomUUID(), time = now();
+      const policy: Policy = { maxTransaction: 100, approvalAbove: 0, dailyLimit: 100, monthlyLimit: 100, allowedPayees: ['sandbox'], frequency: 'unlimited', expiresAt: new Date(Date.now() + 30 * 86400000).toISOString() };
+      await tx.query('INSERT INTO agentvault.agents(id,user_id,name,purpose,policy,created_at) VALUES($1,$2,$3,$4,$5,$6)', [agentId, userId, 'Sandbox checkout agent', 'One $1 test payment, with owner approval.', JSON.stringify(policy), time]);
+      await tx.query('INSERT INTO agentvault.expenses(id,user_id,agent_id,payee_id,title,amount_cents,cadence,max_units,due_at,created_at) VALUES($1,$2,$3,$4,$5,100,\'once\',1,$6,$6)', [expenseId, userId, agentId, 'sandbox', 'PayPal Sandbox connection test', time]);
+      await tx.query('INSERT INTO agentvault.sandbox_setups VALUES($1,$2,$3)', [userId, agentId, expenseId]);
+      await this.audit(tx, userId, 'sandbox.setup', expenseId, 'Authorized one $1 Sandbox test payment. Owner approval and PayPal buyer approval are required.');
+      return { agentId, expenseId };
     });
   }
   async cancelPending(tx: Queryable, userId: string, agentId: string | null, reason: string) {

@@ -4,6 +4,8 @@ AI agents propose spending. Your permissions decide what can proceed.
 
 **Hosted app:** https://agentvault-indol.vercel.app · **Custom domain:** cubecomet.in (DNS setup required)
 
+**Team handoff:** [What is done, what is left, and how to finish it](docs/REMAINING_WORK.md) — updated November 8, 2026.
+
 AgentVault is a working full-stack permission layer with a React dashboard, Express API, persistent PostgreSQL data, scoped agent tokens, and a PayPal Sandbox adapter. The vault is a **virtual spending allowance**, not a separately funded PayPal account. This release never moves live money.
 
 ## Try it
@@ -62,6 +64,6 @@ Amounts are integer USD cents. Limit periods use UTC. Outstanding reservations c
 
 ## Current boundaries
 
-Payees are configured test-service labels, all routed to the configured sandbox merchant. Existing consumer bills/autopays are not discovered or imported. Tasks run on demand, not on an unattended schedule. Gemini and PayPal require server credentials and a real sandbox verification before being described as tested integrations. Email verification, password recovery and MFA are not implemented. Audit records are application records, not an independently tamper-proof financial ledger. Unknown order-creation outcomes require operator reconciliation; the app deliberately keeps their reservations.
+Payees are configured test-service labels, all routed to the configured sandbox merchant. Existing consumer bills/autopays are not discovered or imported. Tasks run on demand, not on an unattended schedule. PayPal Sandbox is configured and verified; Gemini remains unconfigured and unverified in production. Email verification, password recovery and MFA are not implemented. Audit records are application records, not an independently tamper-proof financial ledger. Unknown order-creation outcomes require operator reconciliation; the app deliberately keeps their reservations.
 
 Universal service acceptance, segregated funded wallets and live autonomous spending require additional provider capabilities and review. The app must not be advertised as providing those guarantees.

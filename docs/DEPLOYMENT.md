@@ -46,14 +46,17 @@ Set GEMINI_API_KEY, create a regular account, add a task and ask for it under Bi
 
 ## cubecomet.in
 
-The domain is attached to the Vercel project. Its authoritative nameservers are Hostinger's `dns-parking.com` servers. Vercel's domain check returned these required root records on November 3, 2026:
+The domain is attached to the Vercel project but was still reported as incorrectly configured on November 8, 2026. Its nameservers are `ns1.dns-parking.com` and `ns2.dns-parking.com`. HTTPS health verification failed, while the Vercel app URL returned HTTP 200.
+
+Open [Vercel → AgentVault → Settings → Domains](https://vercel.com/sahil-2006s-projects/agentvault/settings/domains) and use its current required record. The November 8 `vercel domains inspect cubecomet.in` check recommended:
 
 | Type | Name | Value |
 | --- | --- | --- |
-| A | @ | 216.198.79.1 |
-| A | @ | 64.29.17.1 |
+| A | @ | 76.76.21.21 |
 
-Replace the old root A record `2.57.91.91` with those two records at the DNS provider. Preserve unrelated mail and other records. Run `vercel domains verify cubecomet.in` to confirm the current recommendation and propagation. After HTTPS is ready, change APP_ORIGIN and the PayPal webhook URL to `https://cubecomet.in` and redeploy. The Vercel URL remains usable for viewing; authenticated writes use the canonical origin.
+This supersedes the older November 3 record values previously documented here. Confirm the dashboard's current recommendation before changing root records at the DNS provider, and preserve unrelated mail and other records. Recheck with `vercel domains inspect cubecomet.in` and the domain settings page. Keep APP_ORIGIN unchanged until Vercel confirms valid DNS and HTTPS.
+
+Once the domain is ready, set APP_ORIGIN to `https://cubecomet.in` and update the registered PayPal webhook URL to `https://cubecomet.in/api/webhooks/paypal`. If creating a replacement webhook, also update PAYPAL_WEBHOOK_ID. Redeploy, sign in on the new domain, verify `/api/health`, and repeat a Sandbox payment plus verified webhook delivery. The Vercel URL remains usable for viewing; authenticated writes use the canonical origin. [Vercel domain instructions](https://vercel.com/docs/domains/working-with-domains/add-a-domain).
 
 ## Release checks
 

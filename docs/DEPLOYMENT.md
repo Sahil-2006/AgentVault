@@ -32,8 +32,8 @@ Use separate databases/Neon branches for preview and production before testing c
 1. Create a sandbox REST app and a business test account in the [PayPal developer dashboard](https://developer.paypal.com/dashboard/). Set the three credentials above on the server.
 2. Register `https://agentvault-indol.vercel.app/api/webhooks/paypal` for `PAYMENT.CAPTURE.COMPLETED` and save its webhook ID.
 3. Sign into a regular AgentVault account. Under Settings, test PayPal authentication.
-4. Register an agent, authorize a fixed-price task and propose it. Approve it if required, then choose PayPal checkout.
-5. Log in with a separate sandbox buyer. Approve there and return to AgentVault. Confirm capture in AgentVault.
+4. Use **Overview → Open $1 Sandbox test → Prepare $1 test**, or register an agent and authorize your own task. Approve the request, then choose PayPal checkout.
+5. Log in with a separate **US Personal Sandbox buyer** for the hosted USD checkout. View its generated password in the developer dashboard's Sandbox Accounts page. The existing India buyer returned a currency error; the US buyer completed verification. Approve there and return to AgentVault. Confirm capture in AgentVault.
 6. Verify a provider order ID, capture ID, completed state, exactly one settlement and a verified webhook. Also test cancel, pause before capture and a provider timeout.
 
 The return URL is not evidence of payment. The backend retrieves the order and checks order identity, reference, amount, currency and merchant. Create/capture use separate stable idempotency keys. Webhooks must pass PayPal's signature verification endpoint. Timeouts keep funds reserved; “Check status” reads provider state and does not create a new charge. A lost order-creation result cannot currently be recovered in the UI; reconcile with the provider using the stored idempotency key before making administrative changes.

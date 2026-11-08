@@ -12,6 +12,10 @@ Choose **Create your vault** and register or sign in to use PayPal Sandbox. On O
 
 The starter creates one agent and one task limited to a single $1 payment. Reopening it returns the same request; it cannot duplicate a charge. Existing budgets, pauses and permissions still apply. Create additional authorized tasks for further tests.
 
+For the hosted USD checkout, use a **US Personal Sandbox buyer** from PayPal Developer → Testing Tools → Sandbox Accounts. A US test buyer is now available in the project's developer account; view its password there. The existing India-based buyer returned a seller-currency error in our test. Keep these test credentials private. After canceling a request, use **Bills & tasks → Propose** to request a fresh approval for the same task.
+
+**Verified November 8, 2026:** hosted buyer approval → PayPal capture → completed receipt; exactly $1 spent and $0 reserved. PayPal's signed webhook reached the deployed endpoint with HTTP 200. See the [verification record](docs/SANDBOX_VERIFICATION.md).
+
 Choose **Explore simulation** for a private, seeded workspace without PayPal payments. You can edit permissions, pause agents, or run the five-video control test. The **Use PayPal Sandbox** button opens account creation; demo data is never silently converted into payable requests.
 
 ## Run locally

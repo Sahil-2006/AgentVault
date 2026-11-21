@@ -13,3 +13,4 @@ export const expenseSchema = z.object({
   cadence: z.enum(['once', 'daily', 'monthly']), maxUnits: z.number().int().min(1).max(100), dueAt: z.iso.datetime(),
 }).strict();
 export const requestSchema = z.object({ expenseId: z.string().uuid(), clientKey: z.string().min(8).max(100) }).strict();
+export const runSchema = z.object({ prompt: z.string().trim().min(3).max(1500), clientKey: z.string().min(8).max(100) }).strict();

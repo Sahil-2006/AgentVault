@@ -1,6 +1,6 @@
 # AgentVault: what is done and what is left
 
-**Updated November 8, 2026.** [Live app](https://agentvault-indol.vercel.app) · [Repository](https://github.com/Sahil-2006/AgentVault)
+**Updated November 21, 2026.** [Live app](https://agentvault-indol.vercel.app) · [Repository](https://github.com/Sahil-2006/AgentVault)
 
 The hosted Sandbox payment flow works. The broader autonomous-agent product is still unfinished. This checklist describes remaining work; it does not claim these features have been implemented.
 
@@ -19,7 +19,7 @@ All five teammates can work through these items together, splitting small tasks 
 
 | Left to do | How to finish it | Completion check |
 | --- | --- | --- |
-| **1. Saved agent runs** | Add a run record connecting the prompt, selected task, policy decision and payment request. Use a stable client key so retries return the same run. Add owner run history and token-scoped run/status endpoints. Start in `backend/planner.ts`, `backend/service.ts`, `backend/app.ts`, `backend/schema.ts` and the task UI. | A prompt creates one traceable proposal. Reloading or retrying never duplicates it. Another owner or agent cannot read it. |
+| **1. Saved agent runs** | Implemented locally in `backend/runs.ts`, the run API, and Bills & tasks history. Runs connect the prompt, planner result, and policy-checked payment request; stable client keys make retries idempotent. Schema initialization creates the run table automatically. | Code is ready for Sahil's later QA. Tests and hosted deployment were intentionally deferred. |
 | **2. Scheduled tasks** | Add an owner-controlled “auto-propose when due” setting and an authenticated scheduled worker. Use a unique task/period key and recheck permissions under the shared vault lock. Add a manual “Run due tasks” action. | Repeated or overlapping worker calls produce one proposal per due occurrence. Paused/revoked agents cannot proceed. Buyer approval remains required for this checkout integration. |
 | **3. Interrupted-payment recovery** | Extend the current status check to handle lost order-creation responses, stale in-flight requests and confirmed failures. Record dispatch times, verify provider state and reuse the original idempotency key only within the provider's supported retry window. Keep uncertain funds reserved. Start in `backend/paypal.ts`, `backend/service.ts` and the request routes. | Timeout/crash tests cannot produce a second charge. Confirmed failures release the reservation once; completed payments settle once. A pause prevents any new dispatch during recovery. |
 | **4. Smoother PayPal return** | On return from approved checkout, let the UI request capture and display progress. The backend must still retrieve the order and recheck policy. Keep the manual confirmation/status action as a fallback. | A successful buyer approval reaches the receipt without an extra confirmation click. A forged return URL cannot trigger an unapproved payment. |

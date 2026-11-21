@@ -164,24 +164,27 @@ export class VaultService {
       maxUnits: expense.max_units, expenseActive: expense.active, dueAt: expense.due_at });
   }
   async propose(userId: string, agentId: string, expenseId: string, clientKey: string) {
-    return this.locked(userId, async (tx, user) => {
-      const previous = await one(tx, 'SELECT id,agent_id,expense_id FROM agentvault.requests WHERE user_id=$1 AND client_key=$2', [userId, clientKey]);
-      if (previous) {
-        if (previous.agent_id !== agentId || previous.expense_id !== expenseId) throw new AppError(409, 'Idempotency key already belongs to a different request.');
-        return mapRequest(await this.request(tx, userId, previous.id));
-      }
-      const agent = await this.agent(tx, userId, agentId);
-      const expense = await one(tx, 'SELECT * FROM agentvault.expenses WHERE id=$1 AND agent_id=$2 AND user_id=$3', [expenseId, agentId, userId]);
-      if (!expense) throw new AppError(404, 'Authorized task not found for this agent.');
-      const evaluation = await this.evaluate(tx, user, agent, expense);
-      const id = randomUUID(); const state = evaluation.decision === 'DENY' ? 'BLOCKED' : evaluation.decision === 'REQUIRES_APPROVAL' ? 'AWAITING_APPROVAL' : 'READY';
-      await tx.query(`INSERT INTO agentvault.requests(id,user_id,agent_id,expense_id,payee_id,title,amount_cents,state,decision,reason,checks,policy_version,occurrence,client_key,simulated,create_key,capture_key,created_at,updated_at)
-        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$18)`,
-      [id, userId, agentId, expenseId, expense.payee_id, expense.title, expense.amount_cents, state, evaluation.decision, evaluation.reason, JSON.stringify(evaluation.checks), agent.policy_version, this.occurrence(expense), clientKey, user.is_demo || this.config.paymentMode === 'simulation', randomUUID(), randomUUID(), now()]);
-      if (state === 'READY') await this.ledger(tx, userId, id, 'reserve', expense.amount_cents);
-      await this.audit(tx, userId, `payment.${state.toLowerCase()}`, id, `${agent.name} → ${expense.title}: ${evaluation.reason}`);
-      return mapRequest(await this.request(tx, userId, id));
-    });
+    return this.locked(userId, (tx, user) => this.proposeLocked(tx, user, agentId, expenseId, clientKey));
+  }
+  // Caller must hold the owner's row lock. Runs use this to commit their proposal atomically.
+  async proposeLocked(tx: Queryable, user: any, agentId: string, expenseId: string, clientKey: string) {
+    const userId = user.id;
+    const previous = await one(tx, 'SELECT id,agent_id,expense_id FROM agentvault.requests WHERE user_id=$1 AND client_key=$2', [userId, clientKey]);
+    if (previous) {
+      if (previous.agent_id !== agentId || previous.expense_id !== expenseId) throw new AppError(409, 'Idempotency key already belongs to a different request.');
+      return mapRequest(await this.request(tx, userId, previous.id));
+    }
+    const agent = await this.agent(tx, userId, agentId);
+    const expense = await one(tx, 'SELECT * FROM agentvault.expenses WHERE id=$1 AND agent_id=$2 AND user_id=$3', [expenseId, agentId, userId]);
+    if (!expense) throw new AppError(404, 'Authorized task not found for this agent.');
+    const evaluation = await this.evaluate(tx, user, agent, expense);
+    const id = randomUUID(); const state = evaluation.decision === 'DENY' ? 'BLOCKED' : evaluation.decision === 'REQUIRES_APPROVAL' ? 'AWAITING_APPROVAL' : 'READY';
+    await tx.query(`INSERT INTO agentvault.requests(id,user_id,agent_id,expense_id,payee_id,title,amount_cents,state,decision,reason,checks,policy_version,occurrence,client_key,simulated,create_key,capture_key,created_at,updated_at)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$18)`,
+    [id, userId, agentId, expenseId, expense.payee_id, expense.title, expense.amount_cents, state, evaluation.decision, evaluation.reason, JSON.stringify(evaluation.checks), agent.policy_version, this.occurrence(expense), clientKey, user.is_demo || this.config.paymentMode === 'simulation', randomUUID(), randomUUID(), now()]);
+    if (state === 'READY') await this.ledger(tx, userId, id, 'reserve', expense.amount_cents);
+    await this.audit(tx, userId, `payment.${state.toLowerCase()}`, id, `${agent.name} → ${expense.title}: ${evaluation.reason}`);
+    return mapRequest(await this.request(tx, userId, id));
   }
   async decide(userId: string, id: string, approve: boolean) {
     return this.locked(userId, async (tx, user) => {

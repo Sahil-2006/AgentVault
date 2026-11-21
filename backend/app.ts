@@ -9,15 +9,17 @@ import { one } from './db.js';
 import type { Config } from './config.js';
 import { Auth, passwordMatches, type AuthRequest } from './auth.js';
 import { VaultService, hash, mapRequest, mapUser, now } from './service.js';
-import { agentSchema, policySchema, expenseSchema, requestSchema, cents, AppError } from './validation.js';
+import { agentSchema, policySchema, expenseSchema, requestSchema, runSchema, cents, AppError } from './validation.js';
 import { PayPal } from './paypal.js';
 import { plan } from './planner.js';
+import { AgentRuns } from './runs.js';
 
 export function publicConfig(config: Config) {
   return { demoEnabled: config.demoEnabled, paymentMode: config.paymentMode, planner: config.geminiKey ? 'gemini' : 'local' };
 }
 export function createApp(db: Database, config: Config, paypal = new PayPal(config)) {
   const app = express(); const auth = new Auth(db, config); const service = new VaultService(db, config);
+  const runs = new AgentRuns(service);
   app.disable('x-powered-by');
   if (config.production) app.set('trust proxy', 1);
   app.use(helmet({ contentSecurityPolicy: config.production ? { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], fontSrc: ["'self'"], imgSrc: ["'self'", 'data:'], connectSrc: ["'self'"], frameAncestors: ["'none'"] } } : false, crossOriginEmbedderPolicy: false }));
@@ -57,6 +59,17 @@ export function createApp(db: Database, config: Config, paypal = new PayPal(conf
   app.post('/api/agent/requests', auth.agent, auth.limit('agent-request', 120, 60000, true), async (req: AuthRequest, res) => {
     const data = requestSchema.parse(req.body); res.json(await service.propose(req.userId!, req.agentId!, data.expenseId, data.clientKey));
   });
+  app.get('/api/agent/requests/:id', auth.agent, auth.limit('agent-status', 120, 60000, true), async (req: AuthRequest, res) => {
+    const payment = await service.request(db, req.userId!, String(req.params.id));
+    if (payment.agent_id !== req.agentId) throw new AppError(404, 'Request not found.');
+    res.json(mapRequest(payment));
+  });
+  app.post('/api/agent/runs', auth.agent, auth.limit('planner', 15, 60000, true), async (req: AuthRequest, res) => {
+    const result = await runs.submit(req.userId!, req.agentId!, runSchema.parse(req.body), req.agentTokenHash);
+    res.status(result.status === 'PLANNING' ? 202 : 200).json(result);
+  });
+  app.get('/api/agent/runs', auth.agent, auth.limit('agent-status', 120, 60000, true), async (req: AuthRequest, res) => res.json(await runs.list(req.userId!, req.agentId!)));
+  app.get('/api/agent/runs/:id', auth.agent, auth.limit('agent-status', 120, 60000, true), async (req: AuthRequest, res) => res.json(await runs.get(req.userId!, String(req.params.id), req.agentId!)));
 
   app.post('/api/webhooks/paypal', async (req, res) => {
     await paypal.verifyWebhook(req.headers, req.body);
@@ -76,6 +89,13 @@ export function createApp(db: Database, config: Config, paypal = new PayPal(conf
 
   const owner = express.Router(); owner.use(auth.require); owner.use(auth.limit('owner', 240, 60000, true));
   owner.get('/overview', async (req: AuthRequest, res) => res.json(await service.overview(req.userId!)));
+  owner.get('/requests/:id', async (req: AuthRequest, res) => res.json(mapRequest(await service.request(db, req.userId!, String(req.params.id)))));
+  owner.get('/runs/:id', async (req: AuthRequest, res) => res.json(await runs.get(req.userId!, String(req.params.id))));
+  owner.get('/agents/:id/runs', async (req: AuthRequest, res) => res.json(await runs.list(req.userId!, String(req.params.id))));
+  owner.post('/agents/:id/runs', auth.limit('planner', 15, 60000, true), async (req: AuthRequest, res) => {
+    const result = await runs.submit(req.userId!, String(req.params.id), runSchema.parse(req.body));
+    res.status(result.status === 'PLANNING' ? 202 : 200).json(result);
+  });
   owner.post('/agents', async (req: AuthRequest, res) => res.status(201).json(await service.createAgent(req.userId!, agentSchema.parse(req.body))));
   owner.put('/agents/:id/policy', async (req: AuthRequest, res) => res.json(await service.updatePolicy(req.userId!, String(req.params.id), policySchema.parse(req.body))));
   owner.patch('/agents/:id/status', async (req: AuthRequest, res) => {

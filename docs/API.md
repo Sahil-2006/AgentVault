@@ -21,6 +21,22 @@ Retry the same intent with the same clientKey. The result is the original reques
 
 Successful evaluation returns a request in `READY`, `AWAITING_APPROVAL` or `BLOCKED`. Agents cannot approve, edit the vault, create tasks or capture payments. Owner routes require an HttpOnly session cookie, the canonical Origin, and an `X-CSRF-Token` obtained through the authenticated `/api/auth/me` response.
 
+## Saved task runs
+
+Use a run when an agent should interpret a prompt and select from its existing authorized tasks. A run records the prompt, planner result, and any payment request created after the normal permission checks. The stable `clientKey` makes retries of the same intent return the existing run; use a new key for a new attempt.
+
+```http
+POST /api/agent/runs
+Authorization: Bearer <agent-token>
+Content-Type: application/json
+
+{"prompt":"Pay my monthly electricity bill","clientKey":"<stable-uuid-for-this-intent>"}
+```
+
+Agents can list their own run history with `GET /api/agent/runs` and read one run with `GET /api/agent/runs/:id`. A status of `SUBMITTED` means a payment request was created; it may still be awaiting owner approval or be blocked by policy. `NEEDS_INPUT` means the planner did not find one unambiguous task. `FAILED` means planning stopped without creating a payment request. Agents cannot approve a resulting request.
+
+The owner dashboard uses the session-protected `POST /api/agents/:id/runs`, `GET /api/agents/:id/runs`, and `GET /api/runs/:id` routes. Run history is private to the owner and the associated agent token.
+
 ## Payment states
 
 For a signed-in, non-demo Sandbox workspace, `POST /api/integrations/paypal/setup` prepares a single $1 test request with mandatory owner approval. Setup is idempotent per owner and does not change existing budgets, resume agents, or capture money. `POST /api/integrations/paypal/test` verifies server credentials. Both require the owner session, Origin, and CSRF token.

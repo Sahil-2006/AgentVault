@@ -18,7 +18,7 @@ export async function passwordMatches(password: string, stored: string) {
   const expected = Buffer.from(digest || '00'.repeat(64), 'hex');
   return expected.length === computed.length && timingSafeEqual(expected, computed);
 }
-export interface AuthRequest extends Request { userId?: string; csrf?: string; agentId?: string }
+export interface AuthRequest extends Request { userId?: string; csrf?: string; agentId?: string; agentTokenHash?: string }
 export class Auth {
   cookieName = 'av_session';
   constructor(private db: Database, private config: Config) {}
@@ -50,7 +50,7 @@ export class Auth {
     if (!value?.startsWith('Bearer av_')) throw new AppError(401, 'A scoped agent token is required.');
     const agent = await one(this.db, 'SELECT id,user_id,status FROM agentvault.agents WHERE token_hash=$1', [hash(value.slice(7))]);
     if (!agent || agent.status !== 'active') throw new AppError(403, 'Agent token is invalid, paused, or revoked.');
-    req.userId = agent.user_id; req.agentId = agent.id; next();
+    req.userId = agent.user_id; req.agentId = agent.id; req.agentTokenHash = hash(value.slice(7)); next();
   };
   // Database-backed limits work across separate Vercel instances.
   limit = (scope: string, max: number, windowMs: number, user = false) => async (req: AuthRequest, _res: Response, next: NextFunction) => {

@@ -4,7 +4,7 @@ AI agents propose spending. Your permissions decide what can proceed.
 
 **Hosted app:** https://agentvault-indol.vercel.app · **Custom domain:** cubecomet.in (DNS setup required)
 
-**Team handoff:** [What is done, what is left, and how to finish it](docs/REMAINING_WORK.md) — updated November 8, 2026.
+**Team handoff:** [What is done, what is left, and how to finish it](docs/REMAINING_WORK.md) — updated November 21, 2026.
 
 AgentVault is a working full-stack permission layer with a React dashboard, Express API, persistent PostgreSQL data, scoped agent tokens, and a PayPal Sandbox adapter. The vault is a **virtual spending allowance**, not a separately funded PayPal account. This release never moves live money.
 
@@ -46,6 +46,7 @@ npm start     # serves API and built frontend; set APP_ORIGIN to the server's UR
 - Approval workflow, reserved budgets, idempotent requests, audit trail and CSV export.
 - PayPal Sandbox order creation, separate buyer approval and capture, server verification and signed webhook processing.
 - Gemini task selection when configured; an explicitly labeled local matcher otherwise. The model cannot change prices, payees or permissions.
+- Saved, idempotent agent runs with owner history and token-scoped status routes. Run results remain subject to the existing payment policy and approval flow.
 - Responsive landing page and workspace based on the supplied AgentVault design.
 
 ## Why changing IPs does not reset the allowance

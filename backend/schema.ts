@@ -36,6 +36,15 @@ CREATE TABLE IF NOT EXISTS agentvault.sandbox_setups (
  agent_id TEXT NOT NULL REFERENCES agentvault.agents(id),
  expense_id TEXT NOT NULL REFERENCES agentvault.expenses(id)
 );
+CREATE TABLE IF NOT EXISTS agentvault.agent_runs (
+ id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES agentvault.users(id),
+ agent_id TEXT NOT NULL REFERENCES agentvault.agents(id), client_key TEXT NOT NULL, prompt TEXT NOT NULL,
+ status TEXT NOT NULL CHECK(status IN ('PLANNING','SUBMITTED','NEEDS_INPUT','FAILED')),
+ mode TEXT CHECK(mode IN ('local','gemini')), explanation TEXT NOT NULL DEFAULT '', error TEXT,
+ request_id TEXT UNIQUE REFERENCES agentvault.requests(id), created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+ UNIQUE(user_id, agent_id, client_key)
+);
+CREATE INDEX IF NOT EXISTS av_runs_owner ON agentvault.agent_runs(user_id, agent_id, created_at);
 CREATE TABLE IF NOT EXISTS agentvault.ledger (
  id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES agentvault.users(id), request_id TEXT REFERENCES agentvault.requests(id),
  kind TEXT NOT NULL, amount_cents INTEGER NOT NULL, created_at TEXT NOT NULL, UNIQUE(request_id, kind)

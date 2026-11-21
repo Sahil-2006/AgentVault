@@ -15,6 +15,12 @@ export interface PaymentRequest {
   simulated: boolean; approvedAt: string | null; checks: { label: string; passed: boolean; detail: string }[];
 }
 export interface AuditEvent { id: string; action: string; subjectId: string; detail: string; createdAt: string }
+export interface AgentRun {
+  id: string; agentId: string; agentName: string; prompt: string;
+  status: 'PLANNING' | 'SUBMITTED' | 'NEEDS_INPUT' | 'FAILED';
+  mode: 'local' | 'gemini' | null; explanation: string; error: string | null;
+  request: PaymentRequest | null; createdAt: string; updatedAt: string;
+}
 export interface Overview {
   user: User; agents: Agent[]; expenses: Expense[]; requests: PaymentRequest[]; events: AuditEvent[]; payees: Payee[];
   totals: { spent: number; reserved: number; available: number; monthSpent: number; activeAgents: number; approvals: number };
